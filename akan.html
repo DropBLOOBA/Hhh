@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Chat Massal - Real Multi Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; background: #0a0a0a; border: 1px solid #0f0; border-radius: 8px; padding: 25px; }
+        h1 { text-align: center; margin-bottom: 10px; text-shadow: 0 0 3px #0f0; }
+        .flex { display: flex; gap: 20px; flex-wrap: wrap; }
+        .panel { flex: 1; min-width: 300px; background: #111; padding: 15px; border: 1px solid #0f0; border-radius: 5px; }
+        input, textarea, select { width: 100%; background: #1a1a1a; color: #0f0; border: 1px solid #0f0; padding: 8px; margin: 5px 0; font-family: monospace; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 15px; cursor: pointer; font-weight: bold; margin: 5px 0; }
+        button:hover { background: #0c0; }
+        .stop { background: #f00; color: #fff; }
+        .status { background: #000; border: 1px solid #0f0; padding: 10px; margin-top: 15px; max-height: 300px; overflow-y: auto; font-size: 12px; }
+        .badge { font-size: 11px; color: #ff0; }
+        hr { border-color: #0f0; margin: 15px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💣 SPAM CHAT MASSAL REAL 💣</h1>
+    <p class="badge">WhatsApp | Telegram | SMS | LINE | Messenger</p>
+    
+    <div class="flex">
+        <div class="panel">
+            <h3>📱 Platform & Target</h3>
+            <label>Platform:</label>
+            <select id="platform">
+                <option value="whatsapp">WhatsApp (Web + API)</option>
+                <option value="telegram">Telegram (bot API)</option>
+                <option value="sms">SMS Gateway (fonnte)</option>
+                <option value="line">LINE (http request)</option>
+            </select>
+            
+            <label>Nomor/ID Target:</label>
+            <input type="text" id="target" placeholder="628123456789 (pisah dengan koma untuk multiple)">
+            
+            <label>Pesan Spam:</label>
+            <textarea id="message" rows="3">Halo ini pesan spam</textarea>
+            
+            <label>Jumlah Pengiriman:</label>
+            <input type="number" id="count" value="10" min="1" max="999">
+            
+            <label>Delay (ms):</label>
+            <input type="number" id="delay" value="500" min="100">
+            
+            <div style="margin: 15px 0;">
+                <button id="startBtn">🚀 MULAI SPAM</button>
+                <button id="stopBtn" class="stop">⛔ STOP</button>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <h3>⚙️ Konfigurasi API (WAJIB diisi)</h3>
+            <label>API Key / Token:</label>
+            <input type="text" id="apikey" value="rqsty-sk-eeO1TYoSQJmjVwWokGdRBbam7AHaSXu9W+29AXIhoxcU4k3PWpmxSRnho5ZO1KqN4eULRC3UlfpB5TlAFmwHeVT0o2OvyCjFqgo/f9qqrwQ=" placeholder="Token dari fonnte.com / bot Telegram / WhatsApp Business">
+            <label class="badge">Dapatkan token gratis: fonnte.com (WA & SMS), t.me/botfather (Telegram)</label>
+            
+            <label>Custom API URL (opsional):</label>
+            <input type="text" id="apiurl" placeholder="https://api.fonnte.com/send">
+        </div>
+    </div>
+    
+    <hr>
+    <h3>📡 Log Pengiriman</h3>
+    <div class="status" id="log">[+] Siap. Isi token dan target, lalu klik Mulai Spam.</div>
+</div>
+
+<script>
+    let isSpamming = false;
+    let stopSpam = false;
+    let currentInterval = null;
+    
+    const logDiv = document.getElementById('log');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    
+    function addLog(msg, isError = false) {
+        const time = new Date().toLocaleTimeString();
+        const color = isError ? '#ff6666' : '#0f0';
+        logDiv.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    function clearLog() {
+        logDiv.innerHTML = '';
+    }
+    
+    // Fungsi kirim berdasarkan platform
+    async function sendMessage(platform, target, message, apikey, apiurl) {
+        try {
+            switch(platform) {
+                case 'whatsapp':
+                    // Menggunakan Fonnte API (gratis, real)
+                    const waUrl = apiurl || 'https://api.fonnte.com/send';
+                    const waRes = await fetch(waUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': apikey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            target: target,
+                            message: message
+                        })
+                    });
+                    const waData = await waRes.json();
+                    if(waRes.ok && waData.status) return { success: true, response: waData };
+                    else return { success: false, error: waData.reason || waData.message || 'Gagal kirim WA' };
+                    
+                case 'telegram':
+                    // Telegram Bot API
+                    const botToken = apikey;
+                    const chatId = target;
+                    const tgUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                    const tgRes = await fetch(tgUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                    const tgData = await tgRes.json();
+                    if(tgData.ok) return { success: true, response: tgData };
+                    else return { success: false, error: tgData.description || 'Gagal kirim Telegram' };
+                    
+                case 'sms':
+                    // SMS via Fonnte
+                    const smsUrl = apiurl || 'https://api.fonnte.com/send';
+                    const smsRes = await fetch(smsUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': apikey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            target: target,
+                            message: message,
+                            type: 'text'
+                        })
+                    });
+                    const smsData = await smsRes.json();
+                    if(smsRes.ok && smsData.status) return { success: true, response: smsData };
+                    else return { success: false, error: smsData.reason || 'Gagal kirim SMS' };
+                    
+                case 'line':
+                    // LINE Messaging API (butuh channel access token)
+                    const lineToken = apikey;
+                    const lineUserId = target;
+                    const lineUrl = 'https://api.line.me/v2/bot/message/push';
+                    const lineRes = await fetch(lineUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${lineToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            to: lineUserId,
+                            messages: [{ type: 'text', text: message }]
+                        })
+                    });
+                    const lineData = await lineRes.json();
+                    if(lineRes.ok) return { success: true, response: lineData };
+                    else return { success: false, error: lineData.message || 'Gagal kirim LINE' };
+                    
+                default:
+                    return { success: false, error: 'Platform tidak dikenal' };
+            }
+        } catch(e) {
+            return { success: false, error: e.message };
+        }
+    }
+    
+    async function startSpam() {
+        if(isSpamming) {
+            addLog('⚠️ Spam sudah berjalan! Stop dulu.', true);
+            return;
+        }
+        
+        const platform = document.getElementById('platform').value;
+        let targetsRaw = document.getElementById('target').value.trim();
+        const message = document.getElementById('message').value.trim();
+        const count = parseInt(document.getElementById('count').value);
+        const delay = parseInt(document.getElementById('delay').value);
+        const apikey = document.getElementById('apikey').value.trim();
+        const apiurl = document.getElementById('apiurl').value.trim() || null;
+        
+        if(!targetsRaw) { addLog('❌ Target kosong!', true); return; }
+        if(!message) { addLog('❌ Pesan kosong!', true); return; }
+        if(count < 1) { addLog('❌ Jumlah minimal 1', true); return; }
+        if(delay < 50) { addLog('⚠️ Delay terlalu kecil bisa kena banned', true); }
+        
+        // Support multiple targets (pisah koma, spasi, atau newline)
+        let targets = targetsRaw.split(/[ ,\n]+/).filter(t => t.length > 0);
+        if(targets.length === 0) { addLog('❌ Format target salah', true); return; }
+        
+        // Validasi API key untuk platform tertentu
+        if(platform !== 'telegram' && !apikey) {
+            addLog(`❌ Platform ${platform} membutuhkan API Key / Token. Daftar gratis di fonnte.com untuk WA/SMS`, true);
+            return;
+        }
+        if(platform === 'telegram' && !apikey) {
+            addLog('❌ Telegram butuh Bot Token. Buat bot di @BotFather', true);
+            return;
+        }
+        
+        addLog(`🚀 Memulai spam ke ${targets.length} target | Platform: ${platform} | Pesan: "${message.substring(0,50)}..." | Total pengiriman: ${count * targets.length}`);
+        
+        // Peringatan jika token tidak cocok dengan platform
+        if(platform === 'whatsapp' && apikey && apikey.includes('rqsty-sk-')) {
+            addLog('⚠️ PERINGATAN: API Key yang dimasukkan tampaknya bukan token Fonnte (platform WhatsApp/SMS membutuhkan token dari fonnte.com). Token yang benar biasanya berupa string acak tanpa spasi. Kiriman akan GAGAL.', true);
+        }
+        
+        isSpamming = true;
+        stopSpam = false;
+        
+        let sent = 0;
+        let failed = 0;
+        
+        for(let i = 0; i < count && !stopSpam; i++) {
+            for(let t = 0; t < targets.length && !stopSpam; t++) {
+                const target = targets[t];
+                addLog(`📤 Mengirim ke ${target} (${i+1}/${count})`);
+                
+                const result = await sendMessage(platform, target, message, apikey, apiurl);
+                
+                if(result.success) {
+                    sent++;
+                    addLog(`✅ Berhasil ke ${target} - resp: ${JSON.stringify(result.response).substring(0,100)}`);
+                } else {
+                    failed++;
+                    addLog(`❌ Gagal ke ${target}: ${result.error}`, true);
+                }
+                
+                // Delay antar kirim
+                if((i < count-1 || t < targets.length-1) && !stopSpam) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        addLog(`🏁 SPAM SELESAI. Berhasil: ${sent} | Gagal: ${failed}`);
+        isSpamming = false;
+    }
+    
+    function stopSpamming() {
+        if(!isSpamming) {
+            addLog('⚠️ Tidak ada spam yang berjalan', true);
+            return;
+        }
+        stopSpam = true;
+        addLog('⛔ Menghentikan spam... (akan berhenti setelah kirim saat ini)');
+    }
+    
+    startBtn.onclick = () => { startSpam(); };
+    stopBtn.onclick = () => { stopSpamming(); };
+    
+    addLog('💡 CARA PAKAI: 1. Daftar di fonnte.com ambil token. 2. Isi token & target. 3. Pilih platform. 4. Klik Mulai Spam.');
+    addLog('⚠️ SPAM REAL: Mengirim pesan secara massal via API resmi. Resiko akun diblokir ditanggung pengguna.');
+    addLog('⚠️ Token yang Anda masukkan (rqsty-sk-...) kemungkinan BUKAN token Fonnte. Untuk WhatsApp/SMS, daftar di fonnte.com dapatkan token gratis.');
+</script>
+</body>
+</html>
